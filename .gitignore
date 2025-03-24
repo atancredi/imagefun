@@ -1,0 +1,10 @@
+.python-version
+testimages/
+*.jpg
+*.jpeg
+*.png
+*.gif
+ditherit-v2/
+imagefun-frontend/
+__pycache__
+.DS_Store
