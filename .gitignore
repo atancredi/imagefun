@@ -8,3 +8,6 @@ ditherit-v2/
 imagefun-frontend/
 __pycache__
 .DS_Store
+
+!test_watermark/*
+!test_filters/*
