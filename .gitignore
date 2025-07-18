@@ -1,13 +1,17 @@
 .python-version
-testimages/
 *.jpg
 *.jpeg
 *.png
 *.gif
-ditherit-v2/
-imagefun-frontend/
 __pycache__
 .DS_Store
 
-!test_watermark/*
-!test_filters/*
+playground/
+
+__dump/
+__experiments_to_sort/
+
+_results
+_test-watermark/
+_testvideos/
+_testimages/
