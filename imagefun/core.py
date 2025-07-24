@@ -2,9 +2,10 @@ from typing import Optional, Callable, Any
 from dataclasses import dataclass
 from enum import Enum
 from math import sqrt
+import numpy as np
 
 from tqdm import tqdm
-from PIL import Image, ImageStat
+from PIL import Image, ImageStat, PyAccess
 
 
 class ColorSpaces(Enum):
@@ -64,8 +65,11 @@ class Imagefun:
 		self.filters = []
 
 	# IMAGE FUNCTIONS
-	def add_filter(self, func, **kwargs):
-		"""Add a filter function with parameters"""
+	def add_pixel_filter(self, func, **kwargs):
+		"""
+			Add a pixel_filter function.\n
+			func ( (**kwargs) -> (float, float, float) ): function that elaborates the pixel and returns the 3 RGB channels of that pixel.
+		"""
 
 		def wrapped(pixel):
 			return func(pixel, **kwargs)
@@ -73,7 +77,8 @@ class Imagefun:
 		self.filters.append(wrapped)
 		return self
 
-	def process(self):
+	def process_pixels(self):
+		"""Process the pixel of the image using the added pixel_filters"""
 		for y in tqdm(range(self.height)):
 			for x in tqdm(range(self.width), leave=False):
 				pixel = self.pixels[x, y]
@@ -82,13 +87,18 @@ class Imagefun:
 				self.pixels[x, y] = pixel
 		return self
 	
-	def run_manipulation(self, f, **kwargs):
-		self.image = f(self.image, **kwargs)
+	def run_manipulation(self, func, **kwargs):
+		"""
+			Run a function that manipulates the whole image\n
+			func ( (image: Image, **kwargs) -> Image )
+		"""
+		self.image = func(self.image, **kwargs)
 		self.load_image()
 		return self
 
-	def save(self, output_path: Optional[str] = None):
-		self.image.save(output_path)
+	def save(self, output_path: str, optimize=False):
+		"""Save the image to 'output_path'"""
+		self.image.save(output_path, optimize=optimize)
 		return self
 
 	# ANALYSIS FUNCTIONS
