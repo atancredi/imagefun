@@ -1,15 +1,17 @@
 import numpy as np
 from PIL import Image, ImageDraw
 from tqdm import tqdm
+from copy import deepcopy
 
 from .core import Imagefun
 from .palette import Palette
 
 
-class Dithering(Imagefun, Palette):
+class Dithering(Palette):
+    # XXX test the dithering algorithms...
 
     def __init__(self, properties = None):
-        super(Imagefun).__init__(properties)
+        super().__init__(properties)
 
 
     @staticmethod
@@ -33,6 +35,15 @@ class Dithering(Imagefun, Palette):
             ])
 
 
+    @staticmethod
+    def array_from_matrix(matrix):
+        array = []
+        for y in range(len(matrix[0])):
+            for x in range(len(matrix)):
+                array.append(matrix[x][y])
+        return np.asarray(array).astype(np.uint8)
+
+
     def get_palette(self, palette, bw):
         # --- Define Palettes ---
         if bw:
@@ -54,7 +65,8 @@ class Dithering(Imagefun, Palette):
     def threshold(self, palette=None, bw=False):
         # Simple thresholding
         palette = self.get_palette(palette, bw)
-        img_array = self.image.convert("RGB")
+        self.image = self.image.convert("RGB")
+        img_array = np.array(self.image, dtype=float) / 255
         
         if bw:
             grayscale = np.mean(img_array, axis=2)
@@ -77,7 +89,8 @@ class Dithering(Imagefun, Palette):
 
     def random(self, bw=False):
         # Random dithering
-        img_array = self.image.convert("RGB")
+        self.image = self.image.convert("RGB")
+        img_array = np.array(self.image, dtype=float) / 255
         random_noise = np.random.random((self.height, self.width))
         
         if bw:
@@ -107,8 +120,9 @@ class Dithering(Imagefun, Palette):
         
         bayer_matrix = self.get_bayer_matrix(bayer_size)
         bayer_norm = bayer_matrix / (bayer_size**2) - 0.5
-        
-        img_array = self.image.convert("RGB")
+
+        self.image = self.image.convert("RGB")
+        img_array = np.array(self.image, dtype=float) / 255
         
         tq1 = tqdm(range(self.height))
         tq1.set_description_str("bayer dithering")
@@ -133,7 +147,8 @@ class Dithering(Imagefun, Palette):
 
     def floyd_steinberg(self):
         # Error-diffusion dithering
-        img_array = self.image.convert("RGB")
+        self.image = self.image.convert("RGB")
+        img_array = np.array(self.image, dtype=float) / 255
 
         error_dist = [((0, 1), 7/16), ((1, -1), 3/16), ((1, 0), 5/16), ((1, 1), 1/16)]
 
@@ -163,7 +178,8 @@ class Dithering(Imagefun, Palette):
 
     def diffusion(self):
         # Error-diffusion dithering
-        img_array = self.image.convert("RGB")
+        self.image = self.image.convert("RGB")
+        img_array = np.array(self.image, dtype=float) / 255
 
         error_dist = [((0, 1), 1/8), ((0, 2), 1/8), ((1, -1), 1/8), 
                           ((1, 0), 1/8), ((1, 1), 1/8), ((2, 0), 1/8)] # Atkinson
