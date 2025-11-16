@@ -3,9 +3,10 @@ from dataclasses import dataclass
 from enum import Enum
 from math import sqrt
 import numpy as np
+from typing import Callable, Self
 
 from tqdm import tqdm
-from PIL import Image, ImageStat, PyAccess
+from PIL import Image, ImageStat
 
 
 class ColorSpaces(Enum):
@@ -27,6 +28,7 @@ class Imagefun:
 		self.properties = properties or {}
 		self.filters = []
 		self.image = None
+
 		self.pixels = None
 		self.width = 0
 		self.height = 0
@@ -48,6 +50,7 @@ class Imagefun:
 
 				self.image = self.image.resize((width, height))
 
+	# XXX can make the constructors better with a classmethod
 	def from_file(self, path):
 		self.image = Image.open(path)
 		self.update_with_properties()
@@ -59,10 +62,15 @@ class Imagefun:
 		self.update_with_properties()
 		self.load_image()
 		return self
+	
+	@classmethod
+	def from_instance(cls, instance: Self):
+		i = cls()
+		i.image = instance.image
+		i.properties = instance.properties
+		i.load_image()
+		return i
 
-	def __init__(self, properties: Optional[ImageProperties] = None):
-		self.properties = properties
-		self.filters = []
 
 	# IMAGE FUNCTIONS
 	def add_pixel_filter(self, func, **kwargs):
@@ -95,10 +103,26 @@ class Imagefun:
 		self.image = func(self.image, **kwargs)
 		self.load_image()
 		return self
+	
+	
+	# DECORATORS
+	def effect(func):
+		def wrapper(self):
+			func(self)
+		return func
+	
 
+	# @effect
 	def save(self, output_path: str, optimize=False):
 		"""Save the image to 'output_path'"""
 		self.image.save(output_path, optimize=optimize)
+		return self
+
+
+	# CONDITIONAL
+	def conditional(self, condition, function: Callable[[Self], Self]):
+		if condition:
+			function(self)
 		return self
 
 	# ANALYSIS FUNCTIONS
@@ -110,3 +134,9 @@ class Imagefun:
 		)
 		print(self._brightness)
 		return self
+
+	# PROPERTIES
+	@property
+	def size(self):
+		return (self.width, self.height)
+	

@@ -1,17 +1,21 @@
 import numpy as np
 from PIL import Image, ImageDraw
+import PIL.ImageOps
 from tqdm import tqdm
-from copy import deepcopy
+from logging import Logger
 
-from .core import Imagefun
 from .palette import Palette
-
+from .stacklogger import get_logger
 
 class Dithering(Palette):
     # XXX test the dithering algorithms...
 
-    def __init__(self, properties = None):
+    def __init__(self, properties = None, logger: Logger = None):
         super().__init__(properties)
+        if logger:
+            self.logger = logger
+        else:
+            self.logger = get_logger("dithering")
 
 
     @staticmethod
@@ -62,9 +66,8 @@ class Dithering(Palette):
 
 
     # Dithering algorithms
-    def threshold(self, palette=None, bw=False):
+    def threshold(self, bw=False):
         # Simple thresholding
-        palette = self.get_palette(palette, bw)
         self.image = self.image.convert("RGB")
         img_array = np.array(self.image, dtype=float) / 255
         
@@ -80,9 +83,10 @@ class Dithering(Palette):
                     img_array[r, c] = self.find_closest_palette_color(img_array[r, c], self.image_palette_normalized)
         
         if len(img_array) > 0:
+            self.indexed_pixels = img_array
             self.image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
         else:
-            print("WARNING: img array in threshold dithering has size 0")
+            self.logger.warning("WARNING: img array in threshold dithering has size 0")
         
         return self
 
@@ -106,9 +110,10 @@ class Dithering(Palette):
                     img_array[r, c] = self.find_closest_palette_color(noisy_img[r, c], self.image_palette_normalized)
         
         if len(img_array) > 0:
+            self.indexed_pixels = img_array
             self.image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
         else:
-            print("WARNING: img array in random dithering has size 0")
+            self.logger.warning("WARNING: img array in random dithering has size 0")
         
         return self
 
@@ -138,17 +143,18 @@ class Dithering(Palette):
                     img_array[r, c] = self.find_closest_palette_color(new_pixel, self.image_palette_normalized)
 
         if len(img_array) > 0:
+            self.indexed_pixels = img_array
             self.image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
         else:
-            print("WARNING: img array in bayer matrix dithering has size 0")
+            self.logger.warning("WARNING: img array in bayer matrix dithering has size 0")
         
         return self
 
 
     def floyd_steinberg(self):
         # Error-diffusion dithering
-        self.image = self.image.convert("RGB")
-        img_array = np.array(self.image, dtype=float) / 255
+        image = self.image.convert("RGB")
+        img_array = np.array(image, dtype=float) / 255
 
         error_dist = [((0, 1), 7/16), ((1, -1), 3/16), ((1, 0), 5/16), ((1, 1), 1/16)]
 
@@ -169,15 +175,17 @@ class Dithering(Palette):
                         img_array[nr, nc] = np.clip(img_array[nr, nc] + quant_error * factor, 0, 1)
 
         if len(img_array) > 0:
+            self.indexed_pixels = img_array
             self.image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
         else:
-            print("WARNING: img array in floyd-steinberg dithering has size 0")
+            self.logger.warning("WARNING: img array in floyd-steinberg dithering has size 0")
         
         return self
 
 
     def diffusion(self):
         # Error-diffusion dithering
+        # DOES NOT DEPEND ON PALETTE SIZE
         self.image = self.image.convert("RGB")
         img_array = np.array(self.image, dtype=float) / 255
 
@@ -187,10 +195,19 @@ class Dithering(Palette):
         tq1 = tqdm(range(self.height))
         tq1.set_description_str("error diffusion dithering")
         tq2 = tqdm(range(self.width), leave=False)
+        indexed_array = np.zeros((self.height, self.width), dtype=int)
         for r in tq1:
             for c in tq2:
                 old_pixel = img_array[r, c].copy()
-                new_pixel = self.find_closest_palette_color(old_pixel, self.image_palette_normalized)
+                i, new_pixel = self.find_closest_palette_color_index(old_pixel, self.image_palette_normalized)
+                indexed_array[r, c] = i
+
+                # # white detection
+                # if np.average(old_pixel) < 0.05:
+                #     new_pixel = [1.,1.,1.]
+                #     detected_whites += 1
+                #     tq1.set_description_str(f"error diffusion dithering | detected white pixels: {detected_whites}")
+
                 img_array[r, c] = new_pixel
                 
                 quant_error = old_pixel - new_pixel
@@ -201,12 +218,16 @@ class Dithering(Palette):
                         img_array[nr, nc] = np.clip(img_array[nr, nc] + quant_error * factor, 0, 1)
 
         if len(img_array) > 0:
+            self.indexed_pixels = indexed_array
             self.image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
         else:
-            print("WARNING: img array in error-diffusion dithering has size 0")
+            self.logger.warning("WARNING: img array in error-diffusion dithering has size 0")
         
         return self
 
+    def invert(self):
+        self.image = PIL.ImageOps.invert(self.image.convert("L"))
+        return self
 
     def halftone_dither(self, channel='r', grid_size=10, dot_scale=1.5, background_color=(255, 255, 255), dot_color=(0, 0, 0)):
         """
@@ -348,6 +369,63 @@ class Dithering(Palette):
         # Quantize the dithered image to the new palette
         # This converts the image to 'P' (Palette) mode.
         self.image = self.image.quantize(palette=palette_img, dither=Image.NONE)
+        return self
+    
+
+    def make_indexed_array(self):
+        self.image = self.image.convert("RGB")
+        img_array = np.array(self.image, dtype=float) / 255
+
+        tq1 = tqdm(range(self.height))
+        tq1.set_description_str("make indexed array")
+        indexed_array = np.zeros((self.height, self.width), dtype=int)
+        for r in tq1:
+            for c in range(self.width):
+                old_pixel = img_array[r, c].copy()
+                i, new_pixel = self.find_closest_palette_color_index(old_pixel, self.image_palette_normalized)
+                indexed_array[r, c] = i
+
+        self.indexed_pixels = indexed_array
+        return self
+
+    def make_indexed_array_handle_twocolorspalette(self):
+        self.image = self.image.convert("RGB")
+        img_array = np.array(self.image, dtype=float) / 255
+
+        if len(self.image_palette_normalized) > 2:
+            return self.make_indexed_array()
+
+        tq1 = tqdm(range(self.height))
+        tq1.set_description_str("make indexed array (2 colors palette)")
+        indexed_array = np.zeros((self.height, self.width), dtype=int)
+        for r in tq1:
+            for c in range(self.width):
+                old_pixel = img_array[r, c].copy()
+                # if pixel closer to black use lighter color, if closer to white use brighter color
+                sorted_palette = sorted(enumerate(self.image_palette_normalized), key=lambda x: self.luminance(x[1]))
+                if self.luminance(old_pixel) < 0.5:
+                    i = sorted_palette[0][0]
+                else:
+                    i = sorted_palette[1][0]
+                # i, new_pixel = self.find_closest_palette_color_index(old_pixel, self.image_palette_normalized)
+                indexed_array[r, c] = i
+
+        self.indexed_pixels = indexed_array
+        return self
+
+    
+    def make_indexed_png_2(self):
+        # Create an 8-bit palette image directly from the index array
+        indexed_image = Image.fromarray(self.indexed_pixels.astype(np.uint8), 'P')
+        
+        # Flatten the palette and convert from 0-1 range to 0-255 range
+        palette_bytes = (self.image_palette_normalized.flatten() * 255).astype(np.uint8).tolist()
+        
+        # Put the palette into the image
+        indexed_image.putpalette(palette_bytes)
+        
+        self.image = indexed_image
+        self.load_image()
         return self
 
 
