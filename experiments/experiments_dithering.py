@@ -1,7 +1,8 @@
 import sys
 sys.path.insert(0,'../imagefun/')
 
-from imagefun import ImageProperties, Dithering, get_logger
+from imagefun import ImageProperties
+from imagefun.dithering import Dithering, get_logger
 from imagefun.experiments import ImagefunExperimentManager
 
 logger = get_logger("dithering")
@@ -21,7 +22,8 @@ with ImagefunExperimentManager("_test_dither") as exps:
             o = exps.results_folder_path / (file.split(".")[0] + "_dithered_" + str(n_color) + ".png")
             o_p = exps.results_folder_path / (file.split(".")[0] + "__dithered_palette_" + str(n_color) + ".png")
             f = (
-                Dithering(properties=props, logger=logger)
+                Dithering(properties=props)
+                .set_logger(logger)
                 .from_file(p)
                 .palette_3(n_color)
                 .diffusion()
@@ -37,7 +39,8 @@ with ImagefunExperimentManager("_test_dither") as exps:
             o = exps.results_folder_path / fname
 
             f = (
-                Dithering(properties=props, logger=logger)
+                Dithering(properties=props)
+                .set_logger(logger)
                 .from_file(p)
                 .set_palette(palette["colors"])
                 .diffusion()

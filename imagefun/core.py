@@ -4,6 +4,7 @@ from enum import Enum
 from math import sqrt
 import numpy as np
 from typing import Callable, Self
+from logging import Logger
 
 from tqdm import tqdm
 from PIL import Image, ImageStat
@@ -32,6 +33,12 @@ class Imagefun:
 		self.pixels = None
 		self.width = 0
 		self.height = 0
+
+		self.logger = None
+	
+	def set_logger(self, logger: Logger):
+		self.logger = logger
+		return self
 
 	def load_image(self):
 		self.pixels = self.image.load()
@@ -68,6 +75,7 @@ class Imagefun:
 		i = cls()
 		i.image = instance.image
 		i.properties = instance.properties
+		i.logger = instance.logger
 		i.load_image()
 		return i
 

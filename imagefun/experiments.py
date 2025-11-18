@@ -1,7 +1,7 @@
 from os import listdir, makedirs
 from os.path import join, isdir, isfile, splitext
 from typing import Tuple
-from json import load
+from json import load, dump
 from pathlib import Path
 
 IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg"]
@@ -47,6 +47,8 @@ class ImagefunExperimentManager:
         self.config_file = None
         self.image_files = []
 
+        self.report = []
+
 
     def load_experiments(self):
         self.experiments = load(open(self.config_file,"r"))
@@ -61,6 +63,8 @@ class ImagefunExperimentManager:
         # create results folder
         makedirs(self.experiment_folder / self.results_folder, exist_ok=True)
 
+    def save_report(self):
+        dump(self.report, open(self.results_folder_path / "results.json", "w+"))
 
     @property
     def results_folder_path(self):
@@ -73,4 +77,4 @@ class ImagefunExperimentManager:
 
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        self.save_report()

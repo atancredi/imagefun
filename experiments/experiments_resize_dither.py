@@ -11,8 +11,6 @@ logger = get_logger("dithering")
 with ImagefunExperimentManager("_test_dither", results_folder="resized_dither_results") as exps:
     for e in exps.experiments:
 
-        report = {}
-
         props = ImageProperties()
 
         file = e.get("file")
@@ -25,34 +23,22 @@ with ImagefunExperimentManager("_test_dither", results_folder="resized_dither_re
         o = exps.results_folder_path / (file.split(".")[0] + f"_resized_{target_larger_side}.png")
         r = (
             Resize(properties=props)
+            .set_logger(logger)
             .from_file(p)
-            .resize_image_larger_side(target_larger_side)
+            .resize_linked(target_larger_side)
             .save(o)
         )
-        report['resized'] = r.size
+        e['resized'] = r.size
 
-        report['n_colors'] = []
+        e['n_colors'] = []
         for n_color in n_colors:
-            o = exps.results_folder_path / (file.split(".")[0] + "_dithered_" + str(n_color) + ".png")
+            o = exps.results_folder_path / (file.split(".")[0] + f"_resized_{target_larger_side}_dithered_{n_color}.png")
             d = (
                 Dithering.from_instance(r)
                 .palette_3(n_color)
-                # .diffusion()
-                # .save(o)
+                .diffusion()
+                .save(o)
             )
-            report['n_colors'].append([[int(j) for j in x * 255] for x in d.image_palette_normalized])
+            e['n_colors'].append([[int(j) for j in x * 255] for x in d.image_palette_normalized])
 
-        print(report)
-
-        # for n_color in n_colors:
-        #     o = exps.results_folder_path / (file.split(".")[0] + "_dithered_" + str(n_color) + ".png")
-        #     o_p = exps.results_folder_path / (file.split(".")[0] + "__dithered_palette_" + str(n_color) + ".png")
-        #     f = (
-        #         Dithering(properties=props, logger=logger)
-        #         .from_file(p)
-        #         .palette_3(n_color)
-        #         .diffusion()
-        #         # .make_indexed_png_2()
-        #         .plot_palette(o_p)
-        #         .save(o)
-        #     )
+        exps.report.append(e)

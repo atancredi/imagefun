@@ -11,7 +11,7 @@ class Palette(Imagefun):
     image_palette_normalized: np.ndarray
     image_palette_colors: list
 
-    def __init__(self, properties=None):
+    def __init__(self, properties = None):
         super().__init__(properties)
 
     @staticmethod
@@ -164,14 +164,16 @@ class Palette(Imagefun):
 
         pixels = img_array.reshape(-1, 3)
 
-        self.logger.info(f"Starting KMeans palette generation with {num_colors} colors")
+        if self.logger:
+            self.logger.info(f"Starting KMeans palette generation with {num_colors} colors")
         pixels = np.asarray([np.average(x) for x in pixels]).reshape(-1, 1)
         model = KMeans(n_clusters=num_colors, random_state=6759).fit(pixels)
         palette = model.cluster_centers_
-        self.logger.debug(
-            f"Extracted Kmeans palette with {num_colors} colors",
-            # extra={"palette": palette.tolist()},
-        )
+        if self.logger:
+            self.logger.debug(
+                f"Extracted Kmeans palette with {num_colors} colors",
+                # extra={"palette": palette.tolist()},
+            )
 
         has_white = False
         white_thres = 251
@@ -222,10 +224,11 @@ class Palette(Imagefun):
 
         # print(similar_colors)
 
-        self.logger.info(
-            f"Final palette with {num_colors} colors",
-            extra={"palette": palette.tolist()},
-        )
+        if self.logger:
+            self.logger.info(
+                f"Final palette with {num_colors} colors",
+                extra={"palette": palette.tolist()},
+            )
         self.image_palette_normalized = palette / 255
         return self
 

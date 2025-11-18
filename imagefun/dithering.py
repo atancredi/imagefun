@@ -10,12 +10,8 @@ from .stacklogger import get_logger
 class Dithering(Palette):
     # XXX test the dithering algorithms...
 
-    def __init__(self, properties = None, logger: Logger = None):
+    def __init__(self, properties = None):
         super().__init__(properties)
-        if logger:
-            self.logger = logger
-        else:
-            self.logger = get_logger("dithering")
 
 
     @staticmethod
@@ -86,7 +82,8 @@ class Dithering(Palette):
             self.indexed_pixels = img_array
             self.image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
         else:
-            self.logger.warning("WARNING: img array in threshold dithering has size 0")
+            if self.logger:
+                self.logger.warning("WARNING: img array in threshold dithering has size 0")
         
         return self
 
@@ -113,7 +110,8 @@ class Dithering(Palette):
             self.indexed_pixels = img_array
             self.image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
         else:
-            self.logger.warning("WARNING: img array in random dithering has size 0")
+            if self.logger:
+                self.logger.warning("WARNING: img array in random dithering has size 0")
         
         return self
 
@@ -146,7 +144,8 @@ class Dithering(Palette):
             self.indexed_pixels = img_array
             self.image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
         else:
-            self.logger.warning("WARNING: img array in bayer matrix dithering has size 0")
+            if self.logger:
+                self.logger.warning("WARNING: img array in bayer matrix dithering has size 0")
         
         return self
 
@@ -178,7 +177,8 @@ class Dithering(Palette):
             self.indexed_pixels = img_array
             self.image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
         else:
-            self.logger.warning("WARNING: img array in floyd-steinberg dithering has size 0")
+            if self.logger:
+                self.logger.warning("WARNING: img array in floyd-steinberg dithering has size 0")
         
         return self
 
@@ -221,7 +221,8 @@ class Dithering(Palette):
             self.indexed_pixels = indexed_array
             self.image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
         else:
-            self.logger.warning("WARNING: img array in error-diffusion dithering has size 0")
+            if self.logger:
+                self.logger.warning("WARNING: img array in error-diffusion dithering has size 0")
         
         return self
 
