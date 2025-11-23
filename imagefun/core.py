@@ -1,4 +1,4 @@
-from typing import Optional, Callable, Any
+from typing import Optional
 from dataclasses import dataclass
 from enum import Enum
 from math import sqrt
@@ -22,8 +22,10 @@ class ImageProperties:
 
 
 brightness_magic_values = (0.299, 0.587, 0.114)
-class Imagefun:
+class Imagefun(object):
 	image: Image.Image
+	logger: Logger
+	path: str
 
 	def __init__(self, properties=None):
 		self.properties = properties or {}
@@ -60,6 +62,7 @@ class Imagefun:
 	# XXX can make the constructors better with a classmethod
 	def from_file(self, path):
 		self.image = Image.open(path)
+		self.path = path
 		self.update_with_properties()
 		self.load_image()
 		return self
@@ -120,7 +123,13 @@ class Imagefun:
 		return func
 	
 
-	# @effect
+	def run_function(self, func, **kwargs):
+		"""
+			Run a function that exposes the instance of the class
+		"""
+		func(self, **kwargs)
+		return self
+
 	def save(self, output_path: str, optimize=False):
 		"""Save the image to 'output_path'"""
 		self.image.save(output_path, optimize=optimize)

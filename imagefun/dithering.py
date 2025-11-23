@@ -2,10 +2,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 import PIL.ImageOps
 from tqdm import tqdm
-from logging import Logger
 
 from .palette import Palette
-from .stacklogger import get_logger
 
 class Dithering(Palette):
     # XXX test the dithering algorithms...

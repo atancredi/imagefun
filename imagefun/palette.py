@@ -2,7 +2,6 @@ from sklearn.cluster import KMeans, kmeans_plusplus
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from logging import Logger
 
 from .core import Imagefun
 
