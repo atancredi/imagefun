@@ -9,15 +9,26 @@ class Resize(Imagefun):
     def __init__(self, properties = None):
         super().__init__(properties)
     
-    def resize_linked(self, target: int):
-        original_width, original_height = self.image.size
-        ratio = original_height / original_width
-
-        new_size = (target, int(target * ratio))
-
+    def _resize(self, new_size):
         self.image = self.image.resize(new_size, Image.Resampling.LANCZOS)
         self.load_image()
 
         if self.logger:
             self.logger.info(f"Resized image to {new_size}")
+
+    def resize_linked(self, target: int):
+        original_width, original_height = self.image.size
+        ratio = original_height / original_width
+
+        new_size = (target, int(target * ratio))
+        self._resize(new_size)
+
+        return self
+
+    def resize_by_factor(self, factor: float):
+        
+        original_width, original_height = self.image.size
+        new_size = (int(original_width * factor), int(original_height * factor))
+        self._resize(new_size)
+
         return self

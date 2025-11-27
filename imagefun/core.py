@@ -5,6 +5,7 @@ from math import sqrt
 import numpy as np
 from typing import Callable, Self
 from logging import Logger
+import matplotlib.pyplot as plt
 
 from tqdm import tqdm
 from PIL import Image, ImageStat
@@ -28,7 +29,7 @@ class Imagefun(object):
 	path: str
 
 	def __init__(self, properties=None):
-		self.properties = properties or {}
+		self.properties = properties
 		self.filters = []
 		self.image = None
 
@@ -133,6 +134,11 @@ class Imagefun(object):
 	def save(self, output_path: str, optimize=False):
 		"""Save the image to 'output_path'"""
 		self.image.save(output_path, optimize=optimize)
+		return self
+	
+	def show(self):
+		plt.imshow(self.image)
+		plt.show()
 		return self
 
 
