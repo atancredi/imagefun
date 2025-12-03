@@ -1,1 +1,2 @@
-from .core import Imagefun, ImageProperties
+from .core import Imagefun
+from .data import MathEncoder

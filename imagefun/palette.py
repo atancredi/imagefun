@@ -10,8 +10,8 @@ class Palette(Imagefun):
     image_palette_normalized: np.ndarray
     image_palette_colors: list
 
-    def __init__(self, properties = None):
-        super().__init__(properties)
+    def __init__(self):
+        super().__init__()
 
     @staticmethod
     def find_closest_palette_color(pixel, palette: np.ndarray):

@@ -6,8 +6,8 @@ from .core import Imagefun
 
 class Resize(Imagefun):
 
-    def __init__(self, properties = None):
-        super().__init__(properties)
+    def __init__(self):
+        super().__init__()
     
     def _resize(self, new_size):
         self.image = self.image.resize(new_size, Image.Resampling.LANCZOS)

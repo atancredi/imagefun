@@ -1,9 +1,6 @@
-from typing import Optional
-from dataclasses import dataclass
 from enum import Enum
 from math import sqrt
-import numpy as np
-from typing import Callable, Self
+from typing import Callable, Self, List, Any
 from logging import Logger
 import matplotlib.pyplot as plt
 
@@ -15,12 +12,6 @@ class ColorSpaces(Enum):
 	RGB = "RBG"
 
 
-@dataclass
-class ImageProperties:
-	width: Optional[int] = None
-	height: Optional[int] = None
-	color_space: ColorSpaces = ColorSpaces.RGB
-
 
 brightness_magic_values = (0.299, 0.587, 0.114)
 class Imagefun(object):
@@ -28,8 +19,7 @@ class Imagefun(object):
 	logger: Logger
 	path: str
 
-	def __init__(self, properties=None):
-		self.properties = properties
+	def __init__(self):
 		self.filters = []
 		self.image = None
 
@@ -47,38 +37,26 @@ class Imagefun(object):
 		self.pixels = self.image.load()
 		self.width, self.height = self.image.size
 
-	def update_with_properties(self):
-		if self.properties is not None:
-			if self.properties.color_space == ColorSpaces.RGB:
-				self.image.convert("RGB")
-			if self.properties.width != None:
-				width = self.properties.width
-				if self.properties.height != None:
-					height = self.properties.height
-				else:
-					height = int(self.image.height * width / self.image.width)
-
-				self.image = self.image.resize((width, height))
-
 	# XXX can make the constructors better with a classmethod
-	def from_file(self, path):
-		self.image = Image.open(path)
-		self.path = path
-		self.update_with_properties()
-		self.load_image()
-		return self
+	@classmethod
+	def from_file(cls, path):
+		i = cls()
+		i.image = Image.open(path)
+		i.path = path
+		i.load_image()
+		return i
 
-	def from_image(self, image: Image.Image):
-		self.image = image
-		self.update_with_properties()
-		self.load_image()
-		return self
+	@classmethod
+	def from_image(cls, image: Image.Image):
+		i = cls()
+		i.image = image
+		i.load_image()
+		return i
 	
 	@classmethod
 	def from_instance(cls, instance: Self):
 		i = cls()
 		i.image = instance.image
-		i.properties = instance.properties
 		i.logger = instance.logger
 		i.load_image()
 		return i
@@ -124,7 +102,7 @@ class Imagefun(object):
 		return func
 	
 
-	def run_function(self, func, **kwargs):
+	def run_function(self, func: Callable[[Self], Self], **kwargs):
 		"""
 			Run a function that exposes the instance of the class
 		"""
@@ -143,9 +121,15 @@ class Imagefun(object):
 
 
 	# CONDITIONAL
-	def conditional(self, condition, function: Callable[[Self], Self]):
+	def run_if_condition(self, condition, function: Callable[[Self], Self]):
 		if condition:
 			function(self)
+		return self
+
+	# ITERATIVE
+	def run_iterations(self, parameter_list: List[Any], function: Callable[[Self], Self]):
+		for parameter in parameter_list:
+			function(self, parameter)
 		return self
 
 	# ANALYSIS FUNCTIONS

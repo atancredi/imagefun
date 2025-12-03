@@ -8,8 +8,8 @@ from .palette import Palette
 class Dithering(Palette):
     # XXX test the dithering algorithms...
 
-    def __init__(self, properties = None):
-        super().__init__(properties)
+    def __init__(self):
+        super().__init__()
 
 
     @staticmethod
