@@ -1,7 +1,7 @@
 from os import listdir, makedirs
 from os.path import join, isdir, isfile, splitext
 from typing import Tuple
-from json import load, dump
+from json import load
 from pathlib import Path
 
 IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg"]

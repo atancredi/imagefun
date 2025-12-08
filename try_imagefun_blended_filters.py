@@ -1,22 +1,19 @@
 from PIL import Image
 
-from imagefun import Imagefun, ImageProperties
+from imagefun import Imagefun
 from imagefun.filters.rgb import cross_bwand, make_darker
 
 if __name__ == "__main__":
 
-    props = ImageProperties(width=720*3)
-
     f = (
-        Imagefun(properties=props)
+        Imagefun
         .from_file("_testimages/test_ale.jpg")
-        .add_pixel_filter(cross_bwand)
-        .add_pixel_filter(make_darker)
-        .process_pixels()
+        .run_filter(cross_bwand)
+        .run_filter(make_darker)
     )
 
     f_orig = (
-        Imagefun(properties=props).from_file("_testimages/test_ale.jpg")
+        Imagefun.from_file("_testimages/test_ale.jpg")
     )
 
     # Alpha blending: 0.0 = only dry, 1.0 = only wet

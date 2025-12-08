@@ -1,5 +1,5 @@
-from imagefun import Imagefun, ImageProperties
-from imagefun.manipulations.matrix_conversion import matrix_conversion, edge_detect_pil
+from imagefun import Imagefun
+from imagefun.manipulations.matrix_conversion import edge_detect_pil
 import numpy as np
 
 # from imagefun.manipulations.image_enhance import image_enhance
@@ -18,12 +18,12 @@ def edge_kernel(alpha=1.0):
 
 if __name__ == "__main__":
 
-    props = ImageProperties(width=720 * 3)
-
     f = (
-        Imagefun(properties=props)
+        Imagefun
         .from_file("_testimages/test_exwide.jpeg")
-        .print_brightness()
+        .run_function(
+            lambda i: print(i.brightness)
+        )
         .run_manipulation(
             # matrix_conversion,
             edge_detect_pil,
@@ -37,6 +37,8 @@ if __name__ == "__main__":
         #     enhancer=ImageEnhance.Contrast,
         #     value=2.0
         # )
-        .print_brightness()
+        .run_function(
+            lambda i: print(i.brightness)
+        )
         .save("_results/test_exwide_res.jpg")
     )

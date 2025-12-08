@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from tqdm import tqdm
 
-from imagefun.resize import Resize
+from imagefun import Imagefun
 
 SOURCE_FOLDER = ""
 OUTPUT_FOLDER = ""
@@ -22,20 +22,20 @@ def files_in_folder(directory, extensions):
 
 if __name__ == "__main__":
 
-    def convert_rgb(r: Resize):
+    def convert_rgb(r: Imagefun):
         r.image.convert("RGB")
 
     # save images in different folders by orientation
     os.makedirs(Path(OUTPUT_FOLDER) / "landscape", exist_ok=True)
     os.makedirs(Path(OUTPUT_FOLDER) / "portrait", exist_ok=True)
-    def save_by_orientation(r: Resize):
+    def save_by_orientation(r: Imagefun):
         if r.size[0] > r.size[1]:
             r.save(Path(OUTPUT_FOLDER) / "landscape" / (os.path.splitext(image)[0]+".png"))
         else:
             r.save(Path(OUTPUT_FOLDER) / "portrait" / (os.path.splitext(image)[0]+".png"))
     
     for image in tqdm(files_in_folder(SOURCE_FOLDER, [".cr2"])):
-        r = Resize()\
+        r = Imagefun()\
             .from_file(os.path.join(SOURCE_FOLDER, image))\
             .resize_by_factor(FACTOR)\
             .run_function(convert_rgb)\
