@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0,'../imagefun/')
+
 from PIL import Image
 
 from imagefun import Imagefun

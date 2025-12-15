@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0,'../imagefun/')
+
 from imagefun import Imagefun
 from imagefun.manipulations.matrix_conversion import edge_detect_pil
 import numpy as np

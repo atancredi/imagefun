@@ -1,7 +1,8 @@
 from enum import Enum
 from math import sqrt
 import numpy as np
-from typing import Self, Literal
+from typing import Literal
+# from typing import Self
 from logging import Logger
 import matplotlib.pyplot as plt
 
@@ -9,14 +10,14 @@ from PIL import Image, ImageStat
 
 from .pipeline_builder import PipelineBuilder
 from .functions.palette_generation import generate_palette, generate_palette_old
-from .functions.dithering_halftone import halftone_dither, density_halftone
+# from .functions.dithering_halftone import halftone_dither, density_halftone
 from .functions.dithering import bayer, floyd_steinberg, diffusion
 
 class ColorSpaces(Enum):
 	RGB = "RBG"
 
 brightness_magic_values = (0.299, 0.587, 0.114)
-class Imagefun(object, PipelineBuilder):
+class Imagefun(PipelineBuilder):
 	image: Image.Image
 	logger: Logger
 	path: str
@@ -34,22 +35,23 @@ class Imagefun(object, PipelineBuilder):
 		i = cls()
 		i.image = Image.open(path)
 		i.path = path
-		i.load_image()
+		# i.load_image()
 		return i
 
 	@classmethod
 	def from_image(cls, image: Image.Image):
 		i = cls()
 		i.image = image
-		i.load_image()
+		# i.load_image()
 		return i
 	
 	@classmethod
-	def from_instance(cls, instance: Self):
+	# def from_instance(cls, instance: Self):
+	def from_instance(cls, instance):
 		i = cls()
 		i.image = instance.image
 		i.logger = instance.logger
-		i.load_image()
+		# i.load_image()
 		return i
 
 
@@ -106,11 +108,13 @@ class Imagefun(object, PipelineBuilder):
 	# PALETTE FUNCTIONS
 	def palette_old(self, num_colors):
 		palette = generate_palette_old(self.image, num_colors, logger=self.logger)
+		self.image_palette_colors = palette
 		self.image_palette_normalized = palette / 255
 		return self
 	
 	def palette(self, num_colors=8, sample_pixels=500000):
-		palette = generate_palette(self.image, num_colors, sample_pixel=sample_pixels, logger=self.logger)
+		palette = generate_palette(self.image, num_colors, sample_pixels=sample_pixels, logger=self.logger)
+		self.image_palette_colors = palette
 		self.image_palette_normalized = palette / 255
 		return self
 
@@ -195,4 +199,13 @@ class Imagefun(object, PipelineBuilder):
 		self._resize(new_size)
 
 		return self
+
+
+	# TODO to move
+	def get_keys(self, keys):
+		data_dict = {}
+		for k in keys:
+			if type(k) == str:
+				data_dict[k] = self.__dict__[k]
+		return data_dict
 

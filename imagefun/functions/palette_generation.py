@@ -10,9 +10,11 @@ from PIL import Image
 
 def generate_palette_old(image: Image.Image, num_colors: int, logger: Logger = None):
     image = image.convert("RGB")
-    img_array = np.array(image, dtype=float)
+    # img_array = np.array(image, dtype=float)
+    # pixels = img_array.reshape(-1, 3)
 
-    pixels = img_array.reshape(-1, 3)
+    # pixels = image.load()
+    pixels = np.asarray(image)
     height = image.height
     width = image.width
 
@@ -31,13 +33,14 @@ def generate_palette_old(image: Image.Image, num_colors: int, logger: Logger = N
     white_thres = 251
     thresh = 3
     hits = dict.fromkeys(range(len(palette)), [])
+    pixels = image.load()
     for y in tqdm(range(height)):
         for x in tqdm(range(width), leave=False):
             pixel = pixels[x, y]
             avg = np.average(pixel)
             if avg > white_thres:
                 has_white = True
-            for i, avg_color in enumerate(palette):
+            for i, avg_color in enumerate([np.average(x) for x in palette]):
                 if np.absolute(avg - avg_color) < thresh:
                     hits[i].append(pixel)
 
