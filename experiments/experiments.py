@@ -1,11 +1,11 @@
 from os import listdir, makedirs
-from os.path import join, isdir, isfile, splitext
+from os.path import join, isdir, isfile, splitext, basename
 from typing import Tuple
 from json import load
 from pathlib import Path
 
 IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg"]
-EXPERIMENT_FILE_EXTENSION = ".json"
+EXPERIMENT_FILE = "experiment.json"
 
 def list_dir(root_path):
     for path in listdir(root_path):
@@ -22,10 +22,7 @@ def load_images_and_config(experiment_folder, image_extensions, config_file_exte
             _ext: Tuple[str, str] = splitext(full_path)
             if _ext[1].lower() in image_extensions:
                 image_files.append(full_path)
-            if _ext[1].lower() == config_file_extension:
-                if config_file != None:
-                    print("Ignoring json file", full_path)
-                else:
+            if basename(full_path) == EXPERIMENT_FILE:
                     config_file = full_path
 
     if config_file == None:
@@ -44,6 +41,9 @@ class ImagefunExperimentManager:
         self.experiment_folder = Path(experiment_folder)
         self.results_folder = results_folder
 
+        # make results folder
+        makedirs(Path(experiment_folder) / results_folder, exist_ok=True)
+
         self.config_file = None
         self.image_files = []
 
@@ -53,7 +53,7 @@ class ImagefunExperimentManager:
 
 
     def prepare_images(self):
-        config_file, image_files = load_images_and_config(self.experiment_folder, IMAGE_EXTENSIONS, EXPERIMENT_FILE_EXTENSION)
+        config_file, image_files = load_images_and_config(self.experiment_folder, IMAGE_EXTENSIONS, EXPERIMENT_FILE)
 
         self.config_file = config_file
         self.image_files = image_files

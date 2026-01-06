@@ -5,6 +5,7 @@ from collections import defaultdict
 import numpy as np
 from PIL import ImageOps
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 from imagefun import Imagefun, MathEncoder, get_logger
 from experiments import ImagefunExperimentManager
@@ -55,7 +56,14 @@ def invert_image(i: Imagefun):
     return i
 
 
-with ImagefunExperimentManager("_test_dither") as exps:
+
+import argparse
+p = argparse.ArgumentParser()
+p.add_argument("folder")
+args = p.parse_args()
+
+# with ImagefunExperimentManager("_test_dither") as exps:
+with ImagefunExperimentManager(args.folder) as exps:
     report = defaultdict(dict)
     for e in exps.experiments:
 
@@ -72,9 +80,11 @@ with ImagefunExperimentManager("_test_dither") as exps:
                 Imagefun()
                 .set_logger(logger)
                 .from_file(p)
-                .palette_old(n_color)
+                .resize_linked(1250)
+                # .palette_old(n_color)
+                .palette(n_color)
                 .dithering()
-                .run_function(plot_palette, output_name=o_p)
+                # .run_function(plot_palette, output_name=o_p)
                 .save(o)
             )
             report[file][n_color] = f.image_palette_normalized * 255
@@ -102,4 +112,5 @@ with ImagefunExperimentManager("_test_dither") as exps:
                 .save(o)
             )
 
-    dump(report, open("_test_dither/results/experiment_results.json", "w+"), cls=MathEncoder)
+    report_path = Path(args.folder) / "results" / "experiment_results.json"
+    dump(report, open(report_path, "w+"), cls=MathEncoder)
