@@ -21,6 +21,36 @@ class ImagefunBase:
 	image: Image.Image
 	logger: Logger
 
+	@classmethod
+	def from_file(cls, path):
+		i = cls()
+		i.image = Image.open(path)
+		i.path = path
+		# i.load_image()
+		if i.logger:
+			i.logger.debug("[IMG_LOADED] Loaded image from file.", extra={"path": path})
+		return i
+
+	@classmethod
+	def from_image(cls, image: Image.Image):
+		i = cls()
+		i.image = image
+		# i.load_image()
+		if i.logger:
+			i.logger.debug("[IMG_LOADED] Loaded image from PIL Image.")
+		return i
+	
+	@classmethod
+	# def from_instance(cls, instance: Self):
+	def from_instance(cls, instance):
+		i = cls()
+		i.image = instance.image
+		i.logger = instance.logger
+		# i.load_image()
+		if i.logger:
+			i.logger.debug("[IMG_LOADED] Loaded image from Imagefun instance.")
+		return i
+
 
 class ImagefunOps(ImagefunBase):
 
@@ -43,31 +73,6 @@ class Imagefun(ImagefunBase, PipelineBuilder):
 		self.filters = []
 		self.image = None
 		self.logger = None
-	
-	@classmethod
-	def from_file(cls, path):
-		i = cls()
-		i.image = Image.open(path)
-		i.path = path
-		# i.load_image()
-		return i
-
-	@classmethod
-	def from_image(cls, image: Image.Image):
-		i = cls()
-		i.image = image
-		# i.load_image()
-		return i
-	
-	@classmethod
-	# def from_instance(cls, instance: Self):
-	def from_instance(cls, instance):
-		i = cls()
-		i.image = instance.image
-		i.logger = instance.logger
-		# i.load_image()
-		return i
-
 
 	# IMAGE FUNCTIONS
 	def run_filter(self, func, **kwargs):
