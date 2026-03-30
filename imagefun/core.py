@@ -143,8 +143,8 @@ class Imagefun(ImagefunBase, PipelineBuilder):
 
 
 	@staticmethod
-	def is_palette_normalized(palette: List[float]): # XXX utility function - refactor it 
-		return all([(x * 255) < 256 for x in palette ])
+	def is_palette_normalized(palette: List[List[float]]): # XXX utility function - refactor it 
+		return all([all([(n * 255) < 256 for n in x]) for x in palette ])
 
 
 	def dithering(

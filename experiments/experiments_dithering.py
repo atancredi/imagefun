@@ -1,5 +1,6 @@
 import sys
 sys.path.insert(0,'../imagefun/')
+import os
 from json import dump
 from collections import defaultdict
 from pathlib import Path
@@ -11,56 +12,56 @@ from experiments import ImagefunExperimentManager
 logger = get_logger("dithering")
 
 
+def main(folder: str):
 
-import argparse
-p = argparse.ArgumentParser()
-p.add_argument("folder")
-args = p.parse_args()
+    with ImagefunExperimentManager(folder) as exps:
+        report = defaultdict(dict)
+        for e in exps.experiments:
 
-# with ImagefunExperimentManager("_test_dither") as exps:
-with ImagefunExperimentManager(args.folder) as exps:
-    report = defaultdict(dict)
-    for e in exps.experiments:
+            file = e.get("file")
+            n_colors = e.get("n_colors", [])
+            palettes = e.get("palettes", [])
 
-        file = e.get("file")
-        n_colors = e.get("n_colors", [])
-        palettes = e.get("palettes", [])
+            file_name = os.path.basename(file)
 
-        p = exps.experiment_folder / file
-
-        for n_color in n_colors:
-            o = exps.results_folder_path / (file.split(".")[0] + "_dithered_" + str(n_color) + ".png")
-            o_p = exps.results_folder_path / (file.split(".")[0] + "__dithered_palette_" + str(n_color) + ".png")
-            f = (
-                Imagefun()
-                .set_logger(logger)
-                .from_file(p)
-                .resize_linked(1250)
-                # .palette_old(n_color)
-                .palette(n_color)
-                .dithering()
-                # .run_function(plot_palette, output_name=o_p)
-                .save(o)
-            )
-            report[file][n_color] = f.image_palette_normalized * 255
-
-        for palette in palettes:
-            fname = (file.split(".")[0] + f"_dithered_{palette['tag']}")
-            if palette.get("invert"): fname += "_inverted"
-            fname += ".png"
-            o = exps.results_folder_path / fname
-
-            f = (
-                Imagefun()
-                .set_logger(logger)
-                .from_file(p)
-                .dithering(palette=palette["colors"])
-                .run_if_condition(
-                    palette.get("invert", False),
-                    ImagefunOps.invert
+            for n_color in n_colors:
+                f = (
+                    Imagefun()
+                    .set_logger(logger)
+                    .from_file(
+                        exps.experiment_folder / file
+                    )
+                    .palette(n_color)
+                    .dithering()
+                    .save(
+                        exps.results_folder_path / f"{file_name}_dithered_{n_color}.png"
+                    )
                 )
-                .save(o)
-            )
+                report[file][n_color] = f.image_palette_normalized * 255
 
-    report_path = Path(args.folder) / "results" / "experiment_results.json"
-    dump(report, open(report_path, "w+"), cls=MathEncoder)
+            for palette in palettes:
+
+                invert = palette.get("invert", False)
+                f = (
+                    Imagefun()
+                    .set_logger(logger)
+                    .from_file(
+                        exps.experiment_folder / file
+                    )
+                    .dithering(palette=palette["colors"])
+                    .run_if_condition(
+                        invert,
+                        ImagefunOps.invert
+                    )
+                    .save(
+                        exps.results_folder_path / f"{file_name}_dithered_{palette['tag']}{"_inverted" if invert else ""}.png"
+                    )
+                )
+
+        report_path = exps.results_folder_path / "experiment_results.json"
+        dump(report, open(report_path, "w+"), cls=MathEncoder)
+
+
+if __name__ == "__main__":
+    from fire import Fire
+    Fire(main)
