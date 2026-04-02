@@ -1,12 +1,12 @@
 from enum import Enum
 from math import sqrt
 import numpy as np
-from typing import Literal
+from typing import Literal, Optional, List
 # from typing import Self
 from logging import Logger
 import matplotlib.pyplot as plt
 
-from PIL import Image, ImageStat
+from PIL import Image, ImageStat, ImageOps
 
 from .pipeline_builder import PipelineBuilder
 from .functions.palette_generation import generate_palette, generate_palette_old
@@ -16,44 +16,71 @@ from .functions.dithering import bayer, floyd_steinberg, diffusion
 class ColorSpaces(Enum):
 	RGB = "RBG"
 
-brightness_magic_values = (0.299, 0.587, 0.114)
-class Imagefun(PipelineBuilder):
+
+class ImagefunBase:
 	image: Image.Image
 	logger: Logger
-	path: str
 
-	image_palette_normalized: np.ndarray
-	image_palette_colors: list
+	def __init__(self, logger: Logger=None):
+		self.logger = logger
+		if self.logger:
+			self.logger.debug("Logger loaded.")
 
-	def __init__(self):
-		self.filters = []
-		self.image = None
-		self.logger = None
-	
 	@classmethod
-	def from_file(cls, path):
-		i = cls()
+	def from_file(cls, path, logger: Logger = None):
+		i = cls(logger)
 		i.image = Image.open(path)
 		i.path = path
 		# i.load_image()
+		if i.logger:
+			i.logger.debug("[IMG_LOADED] Loaded image from file.", extra={"path": path})
 		return i
 
 	@classmethod
-	def from_image(cls, image: Image.Image):
-		i = cls()
+	def from_image(cls, image: Image.Image, logger: Logger = None):
+		i = cls(logger)
 		i.image = image
 		# i.load_image()
+		if i.logger:
+			i.logger.debug("[IMG_LOADED] Loaded image from PIL Image.")
 		return i
 	
 	@classmethod
 	# def from_instance(cls, instance: Self):
-	def from_instance(cls, instance):
-		i = cls()
+	def from_instance(cls, instance, logger: Logger = None):
+		i = cls(logger)
 		i.image = instance.image
-		i.logger = instance.logger
+		if logger is not None:
+			i.logger = logger
+		else:
+			i.logger = instance.logger
 		# i.load_image()
+		if i.logger:
+			i.logger.debug("[IMG_LOADED] Loaded image from Imagefun instance.")
 		return i
 
+
+class ImagefunOps(ImagefunBase):
+
+	# UTILITIES
+	@classmethod
+	def invert(i):
+		i.image = ImageOps.invert(i.image.convert("L"))
+		return i
+
+
+brightness_magic_values = (0.299, 0.587, 0.114)
+class Imagefun(ImagefunBase, PipelineBuilder):
+	path: str
+
+	image_palette_normalized: np.ndarray
+	image_palette_colors: list
+	image_palette_with_percentages: list
+
+	def __init__(self, logger: Logger):
+		ImagefunBase.__init__(self, logger)
+		self.filters = []
+		self.image = None
 
 	# IMAGE FUNCTIONS
 	def run_filter(self, func, **kwargs):
@@ -112,25 +139,42 @@ class Imagefun(PipelineBuilder):
 		self.image_palette_normalized = palette / 255
 		return self
 	
-	def palette(self, num_colors=8, sample_pixels=500000):
-		palette = generate_palette(self.image, num_colors, sample_pixels=sample_pixels, logger=self.logger)
-		self.image_palette_colors = palette
-		self.image_palette_normalized = palette / 255
+	def palette(self, num_colors=8, sample_pixels=500000, with_percentages=False):
+		palette = generate_palette(self.image, num_colors, sample_pixels=sample_pixels, logger=self.logger, with_percentages=with_percentages)
+		# XXX hack
+		if with_percentages:
+			self.image_palette_with_percentages = palette
+		else:
+			self.image_palette_colors = palette
+			self.image_palette_normalized = palette / 255
 		return self
 
-	def dithering(self, mode: Literal["diffusion"] | Literal["fs"] | Literal["bayer"] = "diffusion"):
+
+	@staticmethod
+	def is_palette_normalized(palette: List[List[float]]): # XXX utility function - refactor it 
+		return all([all([(n * 255) < 256 for n in x]) for x in palette ])
+
+
+	def dithering(
+			self,
+			mode: Literal["diffusion"] | Literal["fs"] | Literal["bayer"] = "diffusion",
+			palette: Optional[List[float]] = None	
+		):
 		"""
 			modes: "diffusion", "fs" (Floyd-Steinberg), "bayer"
 		"""
+		use_palette = palette if palette != None else self.image_palette_normalized
+		use_palette = use_palette if self.is_palette_normalized(use_palette) else use_palette / 255
+
 		match mode:
 			case "diffusion":
-				self.image = diffusion(self.image, self.image_palette_normalized)
+				self.image = diffusion(self.image, use_palette)
 				
 			case "fs":
-				self.image = floyd_steinberg(self.image, self.image_palette_normalized)
+				self.image = floyd_steinberg(self.image, use_palette)
 			
 			case "bayer":
-				self.image = bayer(self.image, self.image_palette_normalized, 4)
+				self.image = bayer(self.image, use_palette, 4)
 
 		return self
 
@@ -178,7 +222,7 @@ class Imagefun(PipelineBuilder):
 	# RESIZE
 	def _resize(self, new_size):
 		self.image = self.image.resize(new_size, Image.Resampling.LANCZOS)
-		self.load_image()
+		# self.load_image()
 
 		if self.logger:
 			self.logger.info(f"Resized image to {new_size}")
