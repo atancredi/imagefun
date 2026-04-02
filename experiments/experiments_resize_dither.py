@@ -4,7 +4,8 @@ import os
 from collections import defaultdict
 from json import dump
 
-from imagefun import Imagefun, MathEncoder, get_logger
+from imagefun import MathEncoder, get_logger
+from imagefun.modules import Palettes
 from experiments import ImagefunExperimentManager
 
 logger = get_logger("dithering")
@@ -23,7 +24,7 @@ def main(folder: str, size = 1250):
             # resize it
             resized_path = exps.results_folder_path / (f"{file_name}_resized_{size}.png")
             f = (
-                Imagefun
+                Palettes
                 .from_file(
                     exps.experiment_folder / file,
                     logger
@@ -35,7 +36,7 @@ def main(folder: str, size = 1250):
             # dither the resized image
             for n_color in n_colors:
                 f = (
-                    Imagefun
+                    Palettes
                     .from_file(
                         resized_path,
                         logger

@@ -3,9 +3,9 @@ sys.path.insert(0,'../imagefun/')
 import os
 from json import dump
 from collections import defaultdict
-from pathlib import Path
 
-from imagefun import Imagefun, ImagefunOps, MathEncoder, get_logger
+from imagefun import Imagefun, MathEncoder, get_logger
+from imagefun.modules import Palettes
 from experiments import ImagefunExperimentManager
 
 
@@ -26,7 +26,7 @@ def main(folder: str):
 
             for n_color in n_colors:
                 f = (
-                    Imagefun
+                    Palettes
                     .from_file(
                         exps.experiment_folder / file,
                         logger
@@ -43,7 +43,7 @@ def main(folder: str):
 
                 invert = palette.get("invert", False)
                 f = (
-                    Imagefun
+                    Palettes
                     .from_file(
                         exps.experiment_folder / file,
                         logger
@@ -51,7 +51,7 @@ def main(folder: str):
                     .dithering(palette=palette["colors"])
                     .run_if_condition(
                         invert,
-                        ImagefunOps.invert
+                        Imagefun.invert
                     )
                     .save(
                         exps.results_folder_path / f"{file_name}_dithered_{palette['tag']}{"_inverted" if invert else ""}.png"

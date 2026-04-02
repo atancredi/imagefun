@@ -20,6 +20,8 @@ def files_in_folder(directory, extensions):
                 yield file
 
 
+# XXX for this 'pipelines' module to have sense the pipeline must be a separate function
+#       and it needs only to be tested in the main
 if __name__ == "__main__":
 
     def convert_rgb(r: Imagefun):
