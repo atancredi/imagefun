@@ -8,7 +8,7 @@ __pycache__
 
 playground/
 
-__dump/
+__dump*/
 __experiments_to_sort/
 
 _results
