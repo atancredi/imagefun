@@ -4,7 +4,6 @@ import numpy as np
 from json import JSONEncoder
 # from typing import Self
 from logging import Logger
-import matplotlib.pyplot as plt
 
 from PIL import Image, ImageStat, ImageOps
 
@@ -74,37 +73,6 @@ class Imagefun:
 		return i
 
 
-	# IMAGE FUNCTIONS
-	def run_filter(self, func, **kwargs):
-		"""
-			Runs a filter function iteratively on the pixels
-			func ( (pixel, **kwargs) -> (float, float, float) )
-		"""
-		image_array = np.array(self.image)
-		image_array = np.array(
-			[
-				[func(image_array[y, x], **kwargs) for x in range(image_array.shape[1])]
-				for y in range(image_array.shape[0])
-			]
-		)
-		self.image = Image.fromarray(image_array)
-		return self
-
-
-	def run_manipulation(self, func, **kwargs):
-		"""
-			Run a function that manipulates the whole image\n
-			func ( (image: Image, **kwargs) -> Image )
-		"""
-		self.image = func(self.image, **kwargs)
-		return self
-
-	# Run arbitrary function
-	def run_function(self, func, **kwargs):
-		func(self, **kwargs)
-		return self
-
-
 	# Run arbitrary function if condition is met
 	def run_if_condition(self, condition, function):
 		if condition:
@@ -117,12 +85,6 @@ class Imagefun:
 		self.image.save(output_path, optimize=optimize)
 		return self
 	
-
-	def show(self):
-		plt.imshow(self.image)
-		plt.show()
-		return self
-
 
 	# PROPERTIES
 	@property
