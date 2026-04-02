@@ -16,3 +16,5 @@ _test-watermark/
 _testvideos/
 _testimages/
 _test*
+__saved_data
+__old*
