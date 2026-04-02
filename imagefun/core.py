@@ -1,20 +1,28 @@
 from enum import Enum
 from math import sqrt
 import numpy as np
+from json import JSONEncoder
 # from typing import Self
 from logging import Logger
 import matplotlib.pyplot as plt
 
 from PIL import Image, ImageStat, ImageOps
 
-from .pipeline_builder import PipelineBuilder
 
 class ColorSpaces(Enum):
 	RGB = "RBG"
 
+class MathEncoder(JSONEncoder):
+    def default(self, o):
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        if isinstance(o, np.float32) or isinstance(o, np.float64):
+            return float(o)
+        return o.__dict__
+
 
 brightness_magic_values = (0.299, 0.587, 0.114)
-class Imagefun(PipelineBuilder):
+class Imagefun:
 	image: Image.Image
 	logger: Logger
 
@@ -91,6 +99,18 @@ class Imagefun(PipelineBuilder):
 		self.image = func(self.image, **kwargs)
 		return self
 
+	# Run arbitrary function
+	def run_function(self, func, **kwargs):
+		func(self, **kwargs)
+		return self
+
+
+	# Run arbitrary function if condition is met
+	def run_if_condition(self, condition, function):
+		if condition:
+			function(self)
+		return self
+	
 
 	def save(self, output_path: str, optimize=False):
 		"""Save the image to 'output_path'"""
