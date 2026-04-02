@@ -1,12 +1,5 @@
-from typing import Callable, List, Any
-from logging import Logger
-
 class PipelineBuilder:
 
-	def set_logger(self, logger: Logger):
-		self.logger = logger
-		return self
-	
 	def run_function(self, func, **kwargs):
 		func(self, **kwargs)
 		return self
@@ -16,11 +9,4 @@ class PipelineBuilder:
 		if condition:
 			function(self)
 		return self
-
-	# ITERATIVE
-	def run_iterations(self, parameter_list: List[Any], function):
-		for parameter in parameter_list:
-			function(self, parameter)
-		return self
-	
 	

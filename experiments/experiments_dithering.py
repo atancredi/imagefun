@@ -26,10 +26,10 @@ def main(folder: str):
 
             for n_color in n_colors:
                 f = (
-                    Imagefun()
-                    .set_logger(logger)
+                    Imagefun
                     .from_file(
-                        exps.experiment_folder / file
+                        exps.experiment_folder / file,
+                        logger
                     )
                     .palette(n_color)
                     .dithering()
@@ -43,10 +43,10 @@ def main(folder: str):
 
                 invert = palette.get("invert", False)
                 f = (
-                    Imagefun()
-                    .set_logger(logger)
+                    Imagefun
                     .from_file(
-                        exps.experiment_folder / file
+                        exps.experiment_folder / file,
+                        logger
                     )
                     .dithering(palette=palette["colors"])
                     .run_if_condition(

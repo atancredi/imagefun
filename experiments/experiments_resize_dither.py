@@ -9,7 +9,6 @@ from experiments import ImagefunExperimentManager
 
 logger = get_logger("dithering")
 
-
 def main(folder: str, size = 1250):
 
     with ImagefunExperimentManager(folder, results_folder="resized_dither_results") as exps:
@@ -24,10 +23,10 @@ def main(folder: str, size = 1250):
             # resize it
             resized_path = exps.results_folder_path / (f"{file_name}_resized_{size}.png")
             f = (
-                Imagefun()
-                .set_logger(logger)
+                Imagefun
                 .from_file(
-                    exps.experiment_folder / file
+                    exps.experiment_folder / file,
+                    logger
                 )
                 .resize_linked(1250)\
                 .save(resized_path)
@@ -36,10 +35,10 @@ def main(folder: str, size = 1250):
             # dither the resized image
             for n_color in n_colors:
                 f = (
-                    Imagefun()
-                    .set_logger(logger)
+                    Imagefun
                     .from_file(
-                        resized_path
+                        resized_path,
+                        logger
                     )
                     .palette(n_color)
                     .dithering()

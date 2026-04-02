@@ -21,9 +21,14 @@ class ImagefunBase:
 	image: Image.Image
 	logger: Logger
 
+	def __init__(self, logger: Logger=None):
+		self.logger = logger
+		if self.logger:
+			self.logger.debug("Logger loaded.")
+
 	@classmethod
-	def from_file(cls, path):
-		i = cls()
+	def from_file(cls, path, logger: Logger = None):
+		i = cls(logger)
 		i.image = Image.open(path)
 		i.path = path
 		# i.load_image()
@@ -32,8 +37,8 @@ class ImagefunBase:
 		return i
 
 	@classmethod
-	def from_image(cls, image: Image.Image):
-		i = cls()
+	def from_image(cls, image: Image.Image, logger: Logger = None):
+		i = cls(logger)
 		i.image = image
 		# i.load_image()
 		if i.logger:
@@ -42,10 +47,13 @@ class ImagefunBase:
 	
 	@classmethod
 	# def from_instance(cls, instance: Self):
-	def from_instance(cls, instance):
-		i = cls()
+	def from_instance(cls, instance, logger: Logger = None):
+		i = cls(logger)
 		i.image = instance.image
-		i.logger = instance.logger
+		if logger is not None:
+			i.logger = logger
+		else:
+			i.logger = instance.logger
 		# i.load_image()
 		if i.logger:
 			i.logger.debug("[IMG_LOADED] Loaded image from Imagefun instance.")
@@ -69,10 +77,10 @@ class Imagefun(ImagefunBase, PipelineBuilder):
 	image_palette_colors: list
 	image_palette_with_percentages: list
 
-	def __init__(self):
+	def __init__(self, logger: Logger):
+		ImagefunBase.__init__(self, logger)
 		self.filters = []
 		self.image = None
-		self.logger = None
 
 	# IMAGE FUNCTIONS
 	def run_filter(self, func, **kwargs):
