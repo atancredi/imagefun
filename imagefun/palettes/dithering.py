@@ -1,6 +1,7 @@
 import numpy as np
 from PIL import Image, ImageDraw
 from tqdm import tqdm
+from numba import njit
 
 def get_bayer_matrix(size):
     if size == 2:
@@ -86,46 +87,94 @@ def floyd_steinberg(image: Image.Image, palette_norm):
 
     image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
     return image
+ì
 
+
+# @njit compiles this function to machine code. fastmath=True allows further CPU optimizations.
+@njit(fastmath=True)
+def _atkinson_dither_core(img_array, palette_norm):
+    height, width, _ = img_array.shape
+    num_colors = palette_norm.shape[0]
+
+    for r in range(height):
+        for c in range(width):
+            # 1. Read pixel directly (no .copy() array allocation)
+            p0 = img_array[r, c, 0]
+            p1 = img_array[r, c, 1]
+            p2 = img_array[r, c, 2]
+
+            # 2. Find closest palette color (Inlined Euclidean distance for speed)
+            min_dist = 1e8
+            best_idx = 0
+            for i in range(num_colors):
+                d0 = p0 - palette_norm[i, 0]
+                d1 = p1 - palette_norm[i, 1]
+                d2 = p2 - palette_norm[i, 2]
+                
+                # Squared distance is faster than calculating the square root
+                dist = d0*d0 + d1*d1 + d2*d2 
+                if dist < min_dist:
+                    min_dist = dist
+                    best_idx = i
+
+            # 3. Assign new pixel
+            new_p0 = palette_norm[best_idx, 0]
+            new_p1 = palette_norm[best_idx, 1]
+            new_p2 = palette_norm[best_idx, 2]
+
+            img_array[r, c, 0] = new_p0
+            img_array[r, c, 1] = new_p1
+            img_array[r, c, 2] = new_p2
+
+            # 4. Calculate quantization error (Multiply by 0.125 instead of dividing by 8)
+            err0 = (p0 - new_p0) * 0.125
+            err1 = (p1 - new_p1) * 0.125
+            err2 = (p2 - new_p2) * 0.125
+
+            # 5. Distribute error (Unrolled loops and manual clipping for maximum speed)
+            if c + 1 < width:
+                v0 = img_array[r, c + 1, 0] + err0; img_array[r, c + 1, 0] = 0.0 if v0 < 0.0 else (1.0 if v0 > 1.0 else v0)
+                v1 = img_array[r, c + 1, 1] + err1; img_array[r, c + 1, 1] = 0.0 if v1 < 0.0 else (1.0 if v1 > 1.0 else v1)
+                v2 = img_array[r, c + 1, 2] + err2; img_array[r, c + 1, 2] = 0.0 if v2 < 0.0 else (1.0 if v2 > 1.0 else v2)
+            
+            if c + 2 < width:
+                v0 = img_array[r, c + 2, 0] + err0; img_array[r, c + 2, 0] = 0.0 if v0 < 0.0 else (1.0 if v0 > 1.0 else v0)
+                v1 = img_array[r, c + 2, 1] + err1; img_array[r, c + 2, 1] = 0.0 if v1 < 0.0 else (1.0 if v1 > 1.0 else v1)
+                v2 = img_array[r, c + 2, 2] + err2; img_array[r, c + 2, 2] = 0.0 if v2 < 0.0 else (1.0 if v2 > 1.0 else v2)
+            
+            if r + 1 < height:
+                if c - 1 >= 0:
+                    v0 = img_array[r + 1, c - 1, 0] + err0; img_array[r + 1, c - 1, 0] = 0.0 if v0 < 0.0 else (1.0 if v0 > 1.0 else v0)
+                    v1 = img_array[r + 1, c - 1, 1] + err1; img_array[r + 1, c - 1, 1] = 0.0 if v1 < 0.0 else (1.0 if v1 > 1.0 else v1)
+                    v2 = img_array[r + 1, c - 1, 2] + err2; img_array[r + 1, c - 1, 2] = 0.0 if v2 < 0.0 else (1.0 if v2 > 1.0 else v2)
+                
+                v0 = img_array[r + 1, c, 0] + err0; img_array[r + 1, c, 0] = 0.0 if v0 < 0.0 else (1.0 if v0 > 1.0 else v0)
+                v1 = img_array[r + 1, c, 1] + err1; img_array[r + 1, c, 1] = 0.0 if v1 < 0.0 else (1.0 if v1 > 1.0 else v1)
+                v2 = img_array[r + 1, c, 2] + err2; img_array[r + 1, c, 2] = 0.0 if v2 < 0.0 else (1.0 if v2 > 1.0 else v2)
+                
+                if c + 1 < width:
+                    v0 = img_array[r + 1, c + 1, 0] + err0; img_array[r + 1, c + 1, 0] = 0.0 if v0 < 0.0 else (1.0 if v0 > 1.0 else v0)
+                    v1 = img_array[r + 1, c + 1, 1] + err1; img_array[r + 1, c + 1, 1] = 0.0 if v1 < 0.0 else (1.0 if v1 > 1.0 else v1)
+                    v2 = img_array[r + 1, c + 1, 2] + err2; img_array[r + 1, c + 1, 2] = 0.0 if v2 < 0.0 else (1.0 if v2 > 1.0 else v2)
+            
+            if r + 2 < height:
+                v0 = img_array[r + 2, c, 0] + err0; img_array[r + 2, c, 0] = 0.0 if v0 < 0.0 else (1.0 if v0 > 1.0 else v0)
+                v1 = img_array[r + 2, c, 1] + err1; img_array[r + 2, c, 1] = 0.0 if v1 < 0.0 else (1.0 if v1 > 1.0 else v1)
+                v2 = img_array[r + 2, c, 2] + err2; img_array[r + 2, c, 2] = 0.0 if v2 < 0.0 else (1.0 if v2 > 1.0 else v2)
+                
+    return img_array
 
 def diffusion(image: Image.Image, palette_norm):
-    # Error-diffusion dithering
-    # DOES NOT DEPEND ON PALETTE SIZE
+    # check for numba
+    palette_norm = np.ascontiguousarray(palette_norm, dtype=np.float64)
+    
     image = image.convert("RGB")
-    img_array = np.array(image, dtype=float) / 255
-    width, height = image.size
-
-    error_dist = [((0, 1), 1/8), ((0, 2), 1/8), ((1, -1), 1/8), 
-                        ((1, 0), 1/8), ((1, 1), 1/8), ((2, 0), 1/8)] # Atkinson
-
-    tq1 = tqdm(range(height))
-    tq1.set_description_str("error diffusion dithering")
-    tq2 = tqdm(range(width), leave=False)
-    indexed_array = np.zeros((height, width), dtype=int)
-    for r in tq1:
-        for c in tq2:
-            old_pixel = img_array[r, c].copy()
-            i, new_pixel = find_closest_palette_color_index(old_pixel, palette_norm)
-            indexed_array[r, c] = i
-
-            # # white detection
-            # if np.average(old_pixel) < 0.05:
-            #     new_pixel = [1.,1.,1.]
-            #     detected_whites += 1
-            #     tq1.set_description_str(f"error diffusion dithering | detected white pixels: {detected_whites}")
-
-            img_array[r, c] = new_pixel
-            
-            quant_error = old_pixel - new_pixel
-
-            for (dr, dc), factor in error_dist:
-                nr, nc = r + dr, c + dc
-                if 0 <= nr < height and 0 <= nc < width:
-                    img_array[nr, nc] = np.clip(img_array[nr, nc] + quant_error * factor, 0, 1)
-
-    image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
-    return image
-
+    img_array = np.array(image, dtype=np.float64) / 255.0
+    
+    print("Applying Atkinson error diffusion...")
+    img_array = _atkinson_dither_core(img_array, palette_norm)
+    
+    return Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
 
 def halftone_dither(
         image: Image.Image,
