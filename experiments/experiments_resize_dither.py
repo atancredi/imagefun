@@ -18,6 +18,7 @@ def main(folder: str, size = 1250):
 
             file: str = e.get("file")
             n_colors = e.get("n_colors", [])
+            palettes = e.get("palettes", [])
 
             file_name = os.path.basename(file)
 
@@ -48,6 +49,20 @@ def main(folder: str, size = 1250):
                     )
                 )
                 report[file][n_color] = f.image_palette_normalized * 255
+
+            for i, palette in enumerate(palettes):
+
+                f = (
+                    Palettes
+                    .from_file(
+                        resized_path,
+                        logger
+                    )
+                    .dithering(palette=palette)
+                    .save(
+                        exps.results_folder_path / f"{file_name}_resized_{size}_dithered_palette{i}.png"
+                    )
+                )
 
 
         dump(report, open(exps.results_folder_path / "experiment_results.json", "w+"), cls=MathEncoder)

@@ -1,0 +1,13 @@
+[project]
+name = "imagefun"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "fire>=0.7.1",
+    "matplotlib>=3.10.9",
+    "numba>=0.65.1",
+    "numpy>=2.2.6",
+    "pillow>=12.2.0",
+    "scikit-learn>=1.7.2",
+    "tqdm>=4.67.3",
+]

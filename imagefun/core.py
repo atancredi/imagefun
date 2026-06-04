@@ -4,6 +4,7 @@ import numpy as np
 from json import JSONEncoder
 # from typing import Self
 from logging import Logger
+from io import BytesIO
 
 from PIL import Image, ImageStat, ImageOps
 
@@ -72,6 +73,16 @@ class Imagefun:
 			i.logger.debug("[IMG_LOADED] Loaded image from Imagefun instance.")
 		return i
 
+
+	@classmethod
+	def from_bytes(cls, b: BytesIO, logger: Logger = None):
+		i = cls(logger)
+		i.image = Image.open(b)
+		if logger is not None:
+			i.logger = logger
+		if i.logger:
+			i.logger.debug("[IMG_LOADED] Loaded image from bytes.")
+		return i
 
 	# Run arbitrary function if condition is met
 	def run_if_condition(self, condition, function):

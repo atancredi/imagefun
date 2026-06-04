@@ -1,4 +1,5 @@
 from typing import Literal, Optional, List
+import numpy as np
 
 from ..core import Imagefun
 # from .dithering import halftone_dither, density_halftone
@@ -16,7 +17,7 @@ class Palettes(Imagefun):
 		if with_percentages:
 			self.image_palette_with_percentages = palette
 		else:
-			self.image_palette_colors = palette
+			self.image_palette_colors = palette.tolist()
 			self.image_palette_normalized = palette / 255
 		return self
 
@@ -35,7 +36,7 @@ class Palettes(Imagefun):
 			modes: "diffusion", "fs" (Floyd-Steinberg), "bayer"
 		"""
 		use_palette = palette if palette != None else self.image_palette_normalized
-		use_palette = use_palette if self.is_palette_normalized(use_palette) else use_palette / 255
+		use_palette = use_palette if self.is_palette_normalized(use_palette) else np.asarray(use_palette) / 255
 
 		match mode:
 			case "diffusion":

@@ -3,6 +3,9 @@ from PIL import Image, ImageDraw
 from tqdm import tqdm
 from numba import njit
 
+import warnings
+warnings.filterwarnings('ignore') 
+
 def get_bayer_matrix(size):
     if size == 2:
         return np.array([[0, 2], [3, 1]])
@@ -87,7 +90,7 @@ def floyd_steinberg(image: Image.Image, palette_norm):
 
     image = Image.fromarray((img_array * 255).astype(np.uint8), 'RGB')
     return image
-ì
+
 
 
 # @njit compiles this function to machine code. fastmath=True allows further CPU optimizations.

@@ -54,7 +54,7 @@ def main(folder: str):
                         Imagefun.invert
                     )
                     .save(
-                        exps.results_folder_path / f"{file_name}_dithered_{palette['tag']}{"_inverted" if invert else ""}.png"
+                        exps.results_folder_path / f"{file_name}_dithered_{palette['tag']}{'_inverted' if invert else ''}.png"
                     )
                 )
 
