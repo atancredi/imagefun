@@ -67,15 +67,3 @@ class JSONFormatter(logging.Formatter):
         return json.dumps(payload)
  
  
-def get_logger(name=None, level=logging.DEBUG):
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
- 
-    logger_handler = logging.StreamHandler()
-    logger_handler.setLevel(level)
-    logger_handler.setFormatter(JSONFormatter())
- 
-    logger.addHandler(logger_handler)
- 
-    return logger
-

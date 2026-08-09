@@ -1,15 +1,21 @@
-import sys
-sys.path.insert(0,'../imagefun/')
 import os
-from json import dump
+from json import dump, JSONEncoder
+import numpy as np
 from collections import defaultdict
 
-from imagefun import Imagefun, MathEncoder, get_logger
-from imagefun.modules import Palettes
-from experiments import ImagefunExperimentManager
+import sys
+sys.path.insert(0, "../imagefun/")
 
+from imagefun import ImagefunLoader
+from .experiments import ImagefunExperimentManager
 
-logger = get_logger("dithering")
+class MathEncoder(JSONEncoder):
+    def default(self, o):
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        if isinstance(o, np.float32) or isinstance(o, np.float64):
+            return float(o)
+        return o.__dict__
 
 
 def main(folder: str):
@@ -26,35 +32,23 @@ def main(folder: str):
 
             for n_color in n_colors:
                 f = (
-                    Palettes
-                    .from_file(
-                        exps.experiment_folder / file,
-                        logger
-                    )
-                    .palette(n_color)
+                    ImagefunLoader.from_file(exps.experiment_folder / file)
+                    .get_palette(n_color)
                     .dithering()
                     .save(
                         exps.results_folder_path / f"{file_name}_dithered_{n_color}.png"
                     )
                 )
-                report[file][n_color] = f.image_palette_normalized * 255
+                report[file][n_color] = f.palette_colors
 
             for palette in palettes:
 
-                invert = palette.get("invert", False)
                 f = (
-                    Palettes
-                    .from_file(
-                        exps.experiment_folder / file,
-                        logger
-                    )
-                    .dithering(palette=palette["colors"])
-                    .run_if_condition(
-                        invert,
-                        Imagefun.invert
-                    )
+                    ImagefunLoader.from_file(exps.experiment_folder / file)
+                    .dithering()
                     .save(
-                        exps.results_folder_path / f"{file_name}_dithered_{palette['tag']}{'_inverted' if invert else ''}.png"
+                        exps.results_folder_path
+                        / f"{file_name}_dithered_{palette['tag']}.png"
                     )
                 )
 
@@ -64,4 +58,5 @@ def main(folder: str):
 
 if __name__ == "__main__":
     from fire import Fire
+
     Fire(main)
